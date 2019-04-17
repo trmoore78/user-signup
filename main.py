@@ -33,17 +33,17 @@ register_form = """
 <form action="/register" id="form" method="POST">
       <h1>Register</h1>
       <label for="username">Username</label>
-      <input type="text" name="username" id="username" value="{0}" />
-      <p class="error">{1}</p>
+      <input type="text" name="username" id="username"/>
+      <p class="error"></p>
       <label for="password">Password</label>
-      <input type="password" name="password" id="password" value="{2}" />
-      <p class="error">{3}</p>
+      <input type="password" name="password" id="password"/>
+      <p class="error"></p>
       <label for="password">Verify Password</label>
-      <input type="password" name="password2" id="password2" value="{4}" />
-      <p class="error">{5}</p>
+      <input type="password" name="password2" id="password2" />
+      <p class="error"></p>
       <label for="email">Email(optional)</label>
-      <input type="email" name="email" id="email" value="{6}" />
-      <p class="error">{7}</p>
+      <input type="text" name="email" id="email" />
+      <p class="error"></p>
       <button type="submit">Register</button>
     </form>
 """
@@ -54,6 +54,7 @@ def register():
     password = cgi.escape(request.form['password'])
     password2 = cgi.escape(request.form['password2'])
     email =  cgi.escape(request.form['email'])
+    emailchain = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.@"
 
     usernameError =""
     passwordError = ""
@@ -63,10 +64,17 @@ def register():
     if not username:
         print("no username")
         usernameError = "Username is required"
+    elif len(username) < 3:
+        passwordError = "Username must be at least 3 characters long"
+    elif len(username) > 20:
+        passwordError = "Username must can be no more than 20 characters long"
+   
     if not password:
         passwordError = "Password is required"
-    elif len(password) < 5:
-        passwordError = "Password must be at least 5 characters long"
+    elif len(password) < 3:
+        passwordError = "Password must be at least 3 characters long"
+    elif len(password) > 20:
+        passwordError = "Password must can be no more than 20 characters long"
     else:
         hasNumber = False
         for char in password:
@@ -74,28 +82,33 @@ def register():
                 hasNumber = True
         if not hasNumber:
             passwordError = "Password must contain a number"
+
     if password  != password2:
         password2Error = "Password 2 must match password" 
+    
+    for char in email:
+        if char not in emailchain or char == " ":
+            emailError = "Please enter a valid email"
+        elif len(email) < 3 or len(email) > 20:
+            emailError = "Please enter a valid email"            
 
-    if usernameError or passwordError or password2Error or passwordError:
+    if usernameError or passwordError or password2Error or passwordError or emailError:
         print("there was an error!")
         content = page_header + register_form.format(username, usernameError, 
         password, passwordError, password2, password2Error,email, emailError) + page_footer
         return content
 
-    return "Thanks for registering, " + username
 
-
-@app.route("/")
-def index():
-    # build the response string
-    content = page_header + welcomeMessage + page_footer
-    return content
 
 @app.route("/register", methods=['GET'])
 def register_page():
     # build the response string
-    content = page_header + register_form.format("", "", "", "", "", "") + page_footer
+    content = welcomeMessage + register_form + page_footer
     return content
+
+@app.route("/")
+def index():
+    return register_form.format("")
+
 
 app.run()
